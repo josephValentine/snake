@@ -1,0 +1,144 @@
+<?-- Snake excersize -->
+<script>
+  document.addEventListener("DOMContentLoaded", function(){
+
+      // global scope is generally bad practice but ok for a tiny program like this
+      // its better to make a class that has these as properties or to just make the 
+      // whole thing functional
+
+      var c = document.getElementById("myCanvas");
+      var ctx = c.getContext("2d");
+      var snake = [{x: 0, y: 0}, {x: 10, y: 0}, {x: 10, y: 10}];
+      var snakeWidth = 20;
+      var fruit = {
+        x: 0,
+        y: 0
+      };
+      var move = {x: 0, y: 1};
+      var framesPerSec = 15;
+      var stopped = false;
+
+      function setFruitLocation() {
+        fruit.x = Math.floor(Math.random() * c.width / snakeWidth) * snakeWidth;
+        fruit.y = Math.floor(Math.random() * c.height / snakeWidth) * snakeWidth;
+
+        // dont allow fruit to appear in a space that is currently occupied by the snake
+        for (let i  = 0; i < snake.length; i++) {
+          if (snake[i].x == fruit.x && snake[i].y == fruit.y) {
+            setFruitLocation();
+          }
+        }
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, c.width, c.height);
+        drawSnake();
+        drawFruit();
+      }
+
+      function drawSnake() {
+        for (let i = 0; i < snake.length; i++) {
+          ctx.lineWidth = "2";
+          ctx.strokeStyle = "green";
+          ctx.beginPath();
+          ctx.rect(snake[i].x, snake[i].y, snakeWidth, snakeWidth);
+          ctx.stroke();
+        }
+      }
+
+      function drawFruit() {
+          ctx.lineWidth = "2";
+          ctx.strokeStyle = "blue";
+          ctx.beginPath();
+          ctx.rect(fruit.x, fruit.y, snakeWidth, snakeWidth);
+          ctx.stroke();
+      }
+
+      function checkIfHitFruit(newHead) {
+        if (newHead.x == fruit.x && newHead.y == fruit.y) {
+          setFruitLocation();
+          snake.push({});
+        }
+      }
+
+      function checkIfHitSelf(newHead) {
+        for (let i = 0; i < snake.length; i++) {
+          if (newHead.x == snake[i].x && newHead.y == snake[i].y) {
+            snake = snake.slice(0, 3);
+          }
+        }
+      }
+
+      function Move(newHead) {
+        // move tail forward from back to front
+        for (let i = snake.length -1; i > 0; i--) {
+          snake[i].x = snake[i - 1].x;
+          snake[i].y = snake[i - 1].y;
+        }
+        // move head
+        snake[0] = newHead;
+      }
+      function getNewHeadPosition () {
+        var newHead = {
+          x: (snake[0].x + snakeWidth * move.x) % c.width, // modulo wraps snake through wall
+          y: (snake[0].y + snakeWidth * move.y) % c.height
+        };
+        if (newHead.x < 0) {
+          newHead.x += c.width;
+        }
+        if (newHead.y < 0) {
+          newHead.y += c.height;
+        }
+        return newHead;
+      }
+      function update() {
+        var newHead = getNewHeadPosition();
+        checkIfHitFruit(newHead);
+        checkIfHitSelf(newHead);
+        Move(newHead);
+        draw();
+        if (!stopped) {
+          setTimeout(() => update(), 1000 / framesPerSec);
+        }
+      }
+
+      // -------------
+      // run
+      // -------------
+
+      // init fruit location
+      setFruitLocation();
+
+      // start game clock
+      setTimeout(() => update(), 1000 / framesPerSec);
+
+      // start an even listner to detect user input
+      document.addEventListener('keydown', onKeyDown);
+      function onKeyDown(e) {
+          if (e.code == 'ArrowRight' && !(move.x == -1 && move.y == 0)) { // dont allow to immediately kill self
+            move.x = 1;
+            move.y = 0;
+          } else if (e.code == 'ArrowLeft' && !(move.x == 1 && move.y == 0)) {
+            move.x = -1;
+            move.y = 0;
+          } else if (e.code == 'ArrowDown' && !(move.x == 0 && move.y == -1)) {
+            move.y = 1;
+            move.x = 0;
+          } else if (e.code == 'ArrowUp' && !(move.x == 0 && move.y == 1)) {
+            move.y = -1;
+            move.x = 0;
+          } else if (e.code == 'Space') {
+            if (stopped) {
+              setTimeout(() => update(), 1000 / framesPerSec);
+            }
+            stopped = !stopped;
+          }
+      }
+  });
+
+</script>
+<canvas id="myCanvas" width="400" height="200" style="border:1px solid #000000;">
+</canvas>
+
+
+
